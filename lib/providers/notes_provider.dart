@@ -1,7 +1,5 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_core/firebase_core.dart';
 import '../models/note.dart';
 import '../services/notes_service.dart';
 import '../services/auth_service.dart';

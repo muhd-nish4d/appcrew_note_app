@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
 import '../../../core/app_routes.dart';
 import '../../../providers/auth_provider.dart';
@@ -32,7 +31,7 @@ class _LoginScreenState extends State<LoginScreen> {
         if (result is Success) {
           Navigator.pushReplacementNamed(context, AppRoutes.home);
         } else if (result is FailureResult) {
-          ErrorPresenter.showError(context, (result as FailureResult).failure);
+          ErrorPresenter.showError(context, (result).failure);
         }
       }
     }

@@ -2,7 +2,6 @@
 import 'dart:io';
 import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'failure.dart';
 
 class ErrorMapper {
@@ -18,13 +17,16 @@ class ErrorMapper {
       );
     } else if (error is TimeoutException) {
       return const Failure(
-        message: 'The connection timed out. Please check your internet and try again.',
+        message:
+            'The connection timed out. Please check your internet and try again.',
         code: 'timeout',
       );
     } else {
       return Failure(
         message: 'An unexpected error occurred. Please try again.',
-        originalException: error is Exception ? error : Exception(error.toString()),
+        originalException: error is Exception
+            ? error
+            : Exception(error.toString()),
       );
     }
   }

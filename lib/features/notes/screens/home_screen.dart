@@ -6,7 +6,6 @@ import '../../../models/note.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/notes_provider.dart';
 import '../../../providers/theme_provider.dart';
-import '../../../providers/network_provider.dart';
 import '../../../core/error/failure.dart';
 import '../../../core/error/error_presenter.dart';
 import '../../../widgets/offline_banner.dart';
@@ -41,7 +40,7 @@ class HomeScreen extends StatelessWidget {
                 if (result is Success) {
                   Navigator.pushReplacementNamed(context, AppRoutes.login);
                 } else if (result is FailureResult) {
-                  ErrorPresenter.showError(context, (result as FailureResult).failure);
+                  ErrorPresenter.showError(context, (result).failure);
                 }
               }
             },

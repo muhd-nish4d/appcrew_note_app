@@ -66,7 +66,7 @@ class _AddEditNoteScreenState extends State<AddEditNoteScreen> {
         if (result is Success) {
           Navigator.pop(context); // Go back after saving
         } else if (result is FailureResult) {
-          ErrorPresenter.showError(context, (result as FailureResult).failure);
+          ErrorPresenter.showError(context, (result).failure);
         }
       }
     }
@@ -83,48 +83,50 @@ class _AddEditNoteScreenState extends State<AddEditNoteScreen> {
           if (isEditing)
             IconButton(
               icon: const Icon(Icons.delete),
-              onPressed: isOffline ? null : () async {
-                final confirm = await showDialog<bool>(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    title: const Text('Delete Note'),
-                    content: const Text(
-                      'Are you sure you want to delete this note?',
-                    ),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(context, false),
-                        child: const Text('Cancel'),
-                      ),
-                      TextButton(
-                        onPressed: () => Navigator.pop(context, true),
-                        child: const Text(
-                          'Delete',
-                          style: TextStyle(color: Colors.red),
+              onPressed: isOffline
+                  ? null
+                  : () async {
+                      final confirm = await showDialog<bool>(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: const Text('Delete Note'),
+                          content: const Text(
+                            'Are you sure you want to delete this note?',
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context, false),
+                              child: const Text('Cancel'),
+                            ),
+                            TextButton(
+                              onPressed: () => Navigator.pop(context, true),
+                              child: const Text(
+                                'Delete',
+                                style: TextStyle(color: Colors.red),
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                    ],
-                  ),
-                );
+                      );
 
-                if (confirm == true) {
-                  if (context.mounted) {
-                    final result = await context
-                        .read<NotesProvider>()
-                        .deleteNote(widget.note!.id);
-                    if (context.mounted) {
-                      if (result is Success) {
-                        Navigator.pop(context);
-                      } else if (result is FailureResult) {
-                        ErrorPresenter.showError(
-                          context,
-                          (result as FailureResult).failure,
-                        );
+                      if (confirm == true) {
+                        if (context.mounted) {
+                          final result = await context
+                              .read<NotesProvider>()
+                              .deleteNote(widget.note!.id);
+                          if (context.mounted) {
+                            if (result is Success) {
+                              Navigator.pop(context);
+                            } else if (result is FailureResult) {
+                              ErrorPresenter.showError(
+                                context,
+                                (result).failure,
+                              );
+                            }
+                          }
+                        }
                       }
-                    }
-                  }
-                }
-              },
+                    },
               tooltip: 'Delete Note',
             ),
         ],
