@@ -39,7 +39,7 @@ A user can only access their own notes.
 
 ---
 
-## 🌐 Offline Handling (Assignment Option A)
+## 🌐 Offline Handling
 
 Implemented offline-aware behavior using the `connectivity_plus` package to ensure stable and predictable UX during network interruptions.
 
