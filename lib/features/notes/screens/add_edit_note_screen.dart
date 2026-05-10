@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../../models/note.dart';
+import '../../../providers/notes_provider.dart';
+import '../../../providers/network_provider.dart';
 import '../../../widgets/custom_button.dart';
 import '../../../widgets/custom_text_field.dart';
+import '../../../core/error/failure.dart';
+import '../../../core/error/error_presenter.dart';
 
 class AddEditNoteScreen extends StatefulWidget {
   final Note? note;
@@ -16,7 +21,6 @@ class _AddEditNoteScreenState extends State<AddEditNoteScreen> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _titleController;
   late TextEditingController _contentController;
-  bool _isLoading = false;
 
   @override
   void initState() {
@@ -29,18 +33,48 @@ class _AddEditNoteScreenState extends State<AddEditNoteScreen> {
 
   void _saveNote() async {
     if (_formKey.currentState?.validate() ?? false) {
-      setState(() => _isLoading = true);
-      // Simulate network request or local db save
-      await Future.delayed(const Duration(seconds: 1));
-      setState(() => _isLoading = false);
+      final title = _titleController.text.trim();
+      final content = _contentController.text.trim();
+      final notesProvider = context.read<NotesProvider>();
+      AsyncResult<void> result;
+
+      if (widget.note != null) {
+        // Edit existing
+        final updatedNote = Note(
+          id: widget.note!.id,
+          title: title,
+          content: content,
+          createdAt: widget.note!.createdAt,
+          updatedAt: DateTime.now(),
+          userId: widget.note!.userId,
+        );
+        result = await notesProvider.updateNote(updatedNote);
+      } else {
+        // Add new
+        final newNote = Note(
+          id: '',
+          title: title,
+          content: content,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+          userId: '', // Service overrides this
+        );
+        result = await notesProvider.addNote(newNote);
+      }
+
       if (mounted) {
-        Navigator.pop(context); // Go back after saving
+        if (result is Success) {
+          Navigator.pop(context); // Go back after saving
+        } else if (result is FailureResult) {
+          ErrorPresenter.showError(context, (result as FailureResult).failure);
+        }
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final isOffline = context.watch<NetworkProvider>().isOffline;
     final isEditing = widget.note != null;
     return Scaffold(
       appBar: AppBar(
@@ -49,9 +83,47 @@ class _AddEditNoteScreenState extends State<AddEditNoteScreen> {
           if (isEditing)
             IconButton(
               icon: const Icon(Icons.delete),
-              onPressed: () {
-                // Delete logic
-                Navigator.pop(context);
+              onPressed: isOffline ? null : () async {
+                final confirm = await showDialog<bool>(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text('Delete Note'),
+                    content: const Text(
+                      'Are you sure you want to delete this note?',
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        child: const Text('Cancel'),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, true),
+                        child: const Text(
+                          'Delete',
+                          style: TextStyle(color: Colors.red),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+
+                if (confirm == true) {
+                  if (context.mounted) {
+                    final result = await context
+                        .read<NotesProvider>()
+                        .deleteNote(widget.note!.id);
+                    if (context.mounted) {
+                      if (result is Success) {
+                        Navigator.pop(context);
+                      } else if (result is FailureResult) {
+                        ErrorPresenter.showError(
+                          context,
+                          (result as FailureResult).failure,
+                        );
+                      }
+                    }
+                  }
+                }
               },
               tooltip: 'Delete Note',
             ),
@@ -93,10 +165,14 @@ class _AddEditNoteScreenState extends State<AddEditNoteScreen> {
                   ),
                 ),
                 const SizedBox(height: 24),
-                CustomButton(
-                  text: 'Save Note',
-                  onPressed: _saveNote,
-                  isLoading: _isLoading,
+                Consumer<NotesProvider>(
+                  builder: (context, notesProvider, child) {
+                    return CustomButton(
+                      text: 'Save Note',
+                      onPressed: isOffline ? null : _saveNote,
+                      isLoading: notesProvider.isLoading,
+                    );
+                  },
                 ),
               ],
             ),

@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
 import '../../../core/app_routes.dart';
-import '../../../services/auth_service.dart';
+import '../../../providers/auth_provider.dart';
+import '../../../providers/network_provider.dart';
+import '../../../core/error/failure.dart';
+import '../../../core/error/error_presenter.dart';
 import '../../../widgets/custom_button.dart';
 import '../../../widgets/custom_text_field.dart';
 
@@ -16,29 +20,19 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final AuthService _authService = AuthService();
-  bool _isLoading = false;
 
   void _login() async {
     if (_formKey.currentState?.validate() ?? false) {
-      setState(() => _isLoading = true);
-      try {
-        await _authService.signInWithEmailAndPassword(
-          _emailController.text.trim(),
-          _passwordController.text.trim(),
-        );
-        if (mounted) {
+      final result = await context.read<LogInAuthProvider>().signIn(
+        _emailController.text.trim(),
+        _passwordController.text.trim(),
+      );
+
+      if (mounted) {
+        if (result is Success) {
           Navigator.pushReplacementNamed(context, AppRoutes.home);
-        }
-      } on FirebaseAuthException catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(e.message ?? 'Authentication failed')),
-          );
-        }
-      } finally {
-        if (mounted) {
-          setState(() => _isLoading = false);
+        } else if (result is FailureResult) {
+          ErrorPresenter.showError(context, (result as FailureResult).failure);
         }
       }
     }
@@ -46,6 +40,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isOffline = context.watch<NetworkProvider>().isOffline;
+
     return Scaffold(
       body: SafeArea(
         child: Center(
@@ -91,10 +87,14 @@ class _LoginScreenState extends State<LoginScreen> {
                     },
                   ),
                   const SizedBox(height: 32),
-                  CustomButton(
-                    text: 'Login',
-                    onPressed: _login,
-                    isLoading: _isLoading,
+                  Consumer<LogInAuthProvider>(
+                    builder: (context, authProvider, child) {
+                      return CustomButton(
+                        text: 'Login',
+                        onPressed: isOffline ? null : _login,
+                        isLoading: authProvider.isLoading,
+                      );
+                    },
                   ),
                   const SizedBox(height: 16),
                   TextButton(

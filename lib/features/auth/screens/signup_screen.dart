@@ -1,8 +1,12 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../../widgets/custom_button.dart';
 import '../../../widgets/custom_text_field.dart';
-import '../../../services/auth_service.dart';
+import '../../../providers/auth_provider.dart';
+import '../../../providers/network_provider.dart';
+import '../../../core/error/failure.dart';
+import '../../../core/error/error_presenter.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -16,32 +20,22 @@ class _SignupScreenState extends State<SignupScreen> {
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final AuthService _authService = AuthService();
-  bool _isLoading = false;
 
   void _signup() async {
     if (_formKey.currentState?.validate() ?? false) {
-      setState(() => _isLoading = true);
-      try {
-        await _authService.createUserWithEmailAndPassword(
-          _emailController.text.trim(),
-          _passwordController.text.trim(),
-        );
-        if (mounted) {
+      final result = await context.read<LogInAuthProvider>().signUp(
+        _emailController.text.trim(),
+        _passwordController.text.trim(),
+      );
+
+      if (mounted) {
+        if (result is Success) {
           Navigator.pop(context); // Go back to login
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Account created! Please log in.')),
           );
-        }
-      } on FirebaseAuthException catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(e.message ?? 'Signup failed')));
-        }
-      } finally {
-        if (mounted) {
-          setState(() => _isLoading = false);
+        } else if (result is FailureResult) {
+          ErrorPresenter.showError(context, (result as FailureResult).failure);
         }
       }
     }
@@ -49,6 +43,8 @@ class _SignupScreenState extends State<SignupScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isOffline = context.watch<NetworkProvider>().isOffline;
+
     return Scaffold(
       appBar: AppBar(title: const Text('Sign Up')),
       body: SafeArea(
@@ -107,10 +103,14 @@ class _SignupScreenState extends State<SignupScreen> {
                   },
                 ),
                 const SizedBox(height: 32),
-                CustomButton(
-                  text: 'Sign Up',
-                  onPressed: _signup,
-                  isLoading: _isLoading,
+                Consumer<LogInAuthProvider>(
+                  builder: (context, authProvider, child) {
+                    return CustomButton(
+                      text: 'Sign Up',
+                      onPressed: isOffline ? null : _signup,
+                      isLoading: authProvider.isLoading,
+                    );
+                  },
                 ),
               ],
             ),

@@ -3,12 +3,16 @@ class Note {
   final String title;
   final String content;
   final DateTime createdAt;
+  final DateTime updatedAt;
+  final String userId;
 
   Note({
     required this.id,
     required this.title,
     required this.content,
     required this.createdAt,
+    required this.updatedAt,
+    required this.userId,
   });
 
   factory Note.fromMap(Map<String, dynamic> map, String id) {
@@ -16,9 +20,13 @@ class Note {
       id: id,
       title: map['title'] as String? ?? '',
       content: map['content'] as String? ?? '',
-      createdAt: map['createdAt'] != null
-          ? DateTime.fromMillisecondsSinceEpoch(map['createdAt'] as int)
+      createdAt: map['created_at'] != null
+          ? DateTime.fromMillisecondsSinceEpoch(map['created_at'] as int)
           : DateTime.now(),
+      updatedAt: map['updated_at'] != null
+          ? DateTime.fromMillisecondsSinceEpoch(map['updated_at'] as int)
+          : DateTime.now(),
+      userId: map['user_id'] as String? ?? '',
     );
   }
 
@@ -26,7 +34,9 @@ class Note {
     return {
       'title': title,
       'content': content,
-      'createdAt': createdAt.millisecondsSinceEpoch,
+      'created_at': createdAt.millisecondsSinceEpoch,
+      'updated_at': updatedAt.millisecondsSinceEpoch,
+      'user_id': userId,
     };
   }
 }

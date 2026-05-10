@@ -18,7 +18,7 @@ class AuthService {
       return await _auth.signInWithEmailAndPassword(
         email: email,
         password: password,
-      );
+      ).timeout(const Duration(seconds: 10));
     } catch (e) {
       rethrow;
     }
@@ -33,7 +33,7 @@ class AuthService {
       return await _auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
-      );
+      ).timeout(const Duration(seconds: 10));
     } catch (e) {
       rethrow;
     }

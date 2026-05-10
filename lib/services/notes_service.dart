@@ -6,8 +6,8 @@ class NotesService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final AuthService _authService = AuthService();
 
-  // Helper to get user's notes collection reference
-  CollectionReference? get _notesCollection {
+  // Helper getter for current user's notes collection reference
+  CollectionReference? get _userNotesCollection {
     final user = _authService.currentUser;
     if (user == null) return null;
     return _firestore.collection('users').doc(user.uid).collection('notes');
@@ -15,35 +15,44 @@ class NotesService {
 
   // Add a new note
   Future<void> addNote(Note note) async {
-    final collection = _notesCollection;
+    final collection = _userNotesCollection;
     if (collection == null) throw Exception('User not authenticated');
 
-    await collection.add(note.toMap());
+    final map = note.toMap();
+    map['user_id'] = _authService.currentUser!.uid; 
+    map['created_at'] = DateTime.now().millisecondsSinceEpoch;
+    map['updated_at'] = DateTime.now().millisecondsSinceEpoch;
+
+    await collection.add(map).timeout(const Duration(seconds: 10));
   }
 
   // Update an existing note
   Future<void> updateNote(Note note) async {
-    final collection = _notesCollection;
+    final collection = _userNotesCollection;
     if (collection == null) throw Exception('User not authenticated');
 
-    await collection.doc(note.id).update(note.toMap());
+    final map = note.toMap();
+    map['updated_at'] = DateTime.now().millisecondsSinceEpoch;
+    // Don't override created_at or user_id during update
+
+    await collection.doc(note.id).update(map).timeout(const Duration(seconds: 10));
   }
 
   // Delete a note
   Future<void> deleteNote(String noteId) async {
-    final collection = _notesCollection;
+    final collection = _userNotesCollection;
     if (collection == null) throw Exception('User not authenticated');
 
-    await collection.doc(noteId).delete();
+    await collection.doc(noteId).delete().timeout(const Duration(seconds: 10));
   }
 
   // Stream of notes for current user
   Stream<List<Note>> getNotesStream() {
-    final collection = _notesCollection;
+    final collection = _userNotesCollection;
     if (collection == null) return const Stream.empty();
 
     return collection
-        .orderBy('createdAt', descending: true)
+        .orderBy('updated_at', descending: true)
         .snapshots()
         .map((snapshot) {
       return snapshot.docs.map((doc) {

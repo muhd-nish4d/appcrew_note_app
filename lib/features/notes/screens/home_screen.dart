@@ -1,52 +1,84 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../../core/constants.dart';
 import '../../../core/app_routes.dart';
 import '../../../models/note.dart';
-import '../../../services/auth_service.dart';
-class HomeScreen extends StatefulWidget {
+import '../../../providers/auth_provider.dart';
+import '../../../providers/notes_provider.dart';
+import '../../../providers/theme_provider.dart';
+import '../../../providers/network_provider.dart';
+import '../../../core/error/failure.dart';
+import '../../../core/error/error_presenter.dart';
+import '../../../widgets/offline_banner.dart';
+
+class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
-}
-
-class _HomeScreenState extends State<HomeScreen> {
-  final AuthService _authService = AuthService();
-  // Dummy data list
-  final List<Note> _notes = [
-    Note(
-      id: '1',
-      title: 'Meeting Notes',
-      content: 'Discuss project milestones and deadlines.',
-      createdAt: DateTime.now().subtract(const Duration(days: 1)),
-    ),
-    Note(
-      id: '2',
-      title: 'Grocery List',
-      content: 'Milk, Eggs, Bread, Butter',
-      createdAt: DateTime.now(),
-    ),
-  ];
-
-  @override
   Widget build(BuildContext context) {
+    final notesProvider = context.watch<NotesProvider>();
+
     return Scaffold(
       appBar: AppBar(
         title: const Text(AppConstants.appName),
         actions: [
           IconButton(
+            icon: Icon(
+              context.watch<ThemeProvider>().isDarkMode
+                  ? Icons.light_mode
+                  : Icons.dark_mode,
+            ),
+            onPressed: () {
+              context.read<ThemeProvider>().toggleTheme();
+            },
+            tooltip: 'Toggle Theme',
+          ),
+          IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () async {
-              await _authService.signOut();
+              final result = await context.read<LogInAuthProvider>().signOut();
               if (context.mounted) {
-                Navigator.pushReplacementNamed(context, AppRoutes.login);
+                if (result is Success) {
+                  Navigator.pushReplacementNamed(context, AppRoutes.login);
+                } else if (result is FailureResult) {
+                  ErrorPresenter.showError(context, (result as FailureResult).failure);
+                }
               }
             },
             tooltip: 'Logout',
           ),
         ],
       ),
-      body: _notes.isEmpty ? _buildEmptyState() : _buildNotesList(),
+      body: Column(
+        children: [
+          const OfflineBanner(),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: TextField(
+              decoration: InputDecoration(
+                hintText: 'Search notes...',
+                prefixIcon: const Icon(Icons.search),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                contentPadding: const EdgeInsets.symmetric(vertical: 0),
+              ),
+              onChanged: (value) {
+                context.read<NotesProvider>().setSearchQuery(value);
+              },
+            ),
+          ),
+          Expanded(
+            child: notesProvider.errorMessage != null
+                ? _buildErrorState(notesProvider)
+                : notesProvider.isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : notesProvider.notes.isEmpty
+                ? _buildEmptyState()
+                : _buildNotesList(notesProvider.notes),
+          ),
+        ],
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           Navigator.pushNamed(context, AppRoutes.addEditNote);
@@ -82,12 +114,53 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildNotesList() {
+  Widget _buildErrorState(NotesProvider provider) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.cloud_off, size: 80, color: Colors.redAccent),
+            const SizedBox(height: 16),
+            Text(
+              'Oops!',
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey.shade800,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              provider.errorMessage!,
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: provider.retryFetchNotes,
+              icon: const Icon(Icons.refresh),
+              label: const Text('Retry'),
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNotesList(List<Note> notes) {
     return ListView.builder(
-      padding: const EdgeInsets.all(16.0),
-      itemCount: _notes.length,
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      itemCount: notes.length,
       itemBuilder: (context, index) {
-        final note = _notes[index];
+        final note = notes[index];
         return Card(
           elevation: 2,
           margin: const EdgeInsets.only(bottom: 12),
