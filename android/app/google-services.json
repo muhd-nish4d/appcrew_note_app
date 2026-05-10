@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "216543236684",
+    "project_id": "apacrewnote",
+    "storage_bucket": "apacrewnote.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:216543236684:android:a36ea77cfb50c9aa6b5ae9",
+        "android_client_info": {
+          "package_name": "com.app.apacrewnote"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD3ZVBpWdPsuI848txjguOfDFi0l_zZBMg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
