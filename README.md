@@ -170,6 +170,136 @@ Reusable atomic widgets include:
 
 ---
 
+# 🚀 Getting Started
+
+Follow the steps below to clone and run the project locally.
+
+---
+
+# 📋 Prerequisites
+
+Make sure you have the following installed on your system:
+
+- Flutter SDK
+- Git
+- Android Studio / VS Code
+- Android Emulator or Physical Device
+
+## Install Flutter
+
+Download and install Flutter from:
+
+https://flutter.dev/docs/get-started/install
+
+Verify installation:
+
+```bash
+flutter doctor
+```
+
+---
+
+# 📥 Clone the Repository
+
+```bash
+git clone https://github.com/username/project-name.git
+```
+
+Navigate to the project folder:
+
+```bash
+cd project-name
+```
+
+---
+
+# 📦 Install Dependencies
+
+Run the following command to install all required packages:
+
+```bash
+flutter pub get
+```
+
+---
+
+# ▶️ Run the Application
+
+Check available devices:
+
+```bash
+flutter devices
+```
+
+Run the app:
+
+```bash
+flutter run
+```
+
+---
+
+# 🏗️ Build APK
+
+To generate a release APK:
+
+```bash
+flutter build apk
+```
+
+APK output location:
+
+```text
+build/app/outputs/flutter-apk/app-release.apk
+```
+
+---
+
+# 🧹 Clean Project
+
+If you face dependency or cache issues:
+
+```bash
+flutter clean
+flutter pub get
+```
+
+---
+
+# ⚠️ Common Issues
+
+## Android licenses not accepted
+
+Run:
+
+```bash
+flutter doctor --android-licenses
+```
+
+## Flutter doctor issues
+
+Run:
+
+```bash
+flutter doctor
+```
+
+Fix the issues shown in the terminal.
+
+---
+
+# 🛠️ Useful Commands
+
+```bash
+flutter doctor
+flutter pub get
+flutter clean
+flutter run
+flutter build apk
+```
+
+---
+
 # ⚠️ Assumptions & Trade-offs
 
 - Chose `Provider` for simplicity, scalability, and strong Flutter ecosystem integration.
